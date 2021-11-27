@@ -21,18 +21,9 @@
 static BOOL DNDPreviouslyEnabled = true;
 static DNDModeAssertionService *assertionService;
 
-static void disableDND(){
-	if (!assertionService) assertionService = (DNDModeAssertionService *)[NSClassFromString(@"DNDModeAssertionService") serviceForClientIdentifier:@"com.apple.donotdisturb.control-center.module"];
-	[assertionService invalidateAllActiveModeAssertionsWithError:NULL];
-}
-
 @interface CCDNDTimer : CCUIToggleModule
 {
   BOOL _selected;
 }
 - (void)setSelected:(BOOL)selected;
-+(void)enableDND;
-//-(NSTimer*)getTimer;
--(BOOL)getGotDeselected;
-+ (id)sharedInstance;
 @end
