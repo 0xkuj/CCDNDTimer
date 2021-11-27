@@ -42,7 +42,10 @@ static bool isDNDEnabled() {
 - (BOOL)isSelected
 {
   NSLog(@"omriku checking toggle state..");
-  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(cancelToggle) name:@"com.0xkuj.ccdndtimer.timerover" object:nil];
+  static dispatch_once_t onceToken2;
+  dispatch_once(&onceToken2, ^{
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(cancelToggle) name:@"com.0xkuj.ccdndtimer.timerover" object:nil];
+  });
   NSMutableDictionary* timerLeftDict = [[NSMutableDictionary alloc] initWithContentsOfFile:DND_TIMER_PLIST];
   NSDate* lastFireDate = [timerLeftDict objectForKey:@"DNDFireDate"];
   long timeDelta = [lastFireDate timeIntervalSinceDate:[NSDate date]];
@@ -59,19 +62,24 @@ static bool isDNDEnabled() {
 
   if(_selected)
   {
-    NSLog(@"omriku toggle got selected!");
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"CCDNDTimer" message:[NSString stringWithFormat:@"Enter time below (minutes)"] preferredStyle:UIAlertControllerStyleAlert];
-		[alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) { textField.placeholder = @"Enter Minutes";	textField.keyboardType = UIKeyboardTypeNumberPad;}];
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"CCDNDTimer" message:[NSString stringWithFormat:@"How long you want DND to be active?"] preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) { textField.placeholder = @"Enter Hours";	textField.keyboardType = UIKeyboardTypeNumberPad;}];
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) { textField.placeholder = @"Enter Minutes";	textField.keyboardType = UIKeyboardTypeNumberPad;}];
     UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"Enable DND" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
           //post notificvation..
-          if ([[[alertController textFields][0] text] intValue] == 0) {
+          if ([[[alertController textFields][1] text] intValue] == 0 && [[[alertController textFields][0] text] intValue] == 0) {
             [self setSelected:NO];
             return;
           }
-          [self updateDNDTimerSettingsWithTimeLeft:[NSNumber numberWithInt:[[[alertController textFields][0] text] intValue]]];
+          int minutes = [[[alertController textFields][1] text] intValue];
+          int hours = [[[alertController textFields][0] text] intValue];
+
+          NSNumber* hoursAndMinutes = [NSNumber numberWithInt:(minutes+hours*60)]; 
+          [self updateDNDTimerSettingsWithTimeLeft:hoursAndMinutes];
           NSLog(@"omriku starting DNDTimer with time of firedate: %@", DNDFireDate);
           enableDND();
           NSLog(@"omriku posting notifciation");
+
           [[NSNotificationCenter defaultCenter] postNotificationName:@"com.0xkuj.ccdndtimer.moduleactivated" object:nil];
     }];
     
@@ -88,7 +96,6 @@ static bool isDNDEnabled() {
   }
   else
   {
-    NSLog(@"omriku got canceled toggle!");
     gotDeselected = YES;
     disableDND();
     [self updateDNDTimerSettingsWithTimeLeft:[NSNumber numberWithInt:0]];
@@ -97,11 +104,16 @@ static bool isDNDEnabled() {
 }
 
 -(void)cancelToggle {
+  NSLog(@"omriku cancel toggle has been called!");
   [self setSelected:NO];
 }
 
 -(void)updateDNDTimerSettingsWithTimeLeft:(NSNumber*)timeLeft {
-  NSLog(@"omriku saving to settings + updating the global variable! with timeleft: %@", timeLeft);
+  NSLog(@"omriku saving to settings + updating the global variable! with timeleft: %@ and DNDFireDate: %f", timeLeft, [DNDFireDate timeIntervalSinceDate:[NSDate date]]);
+  if ([DNDFireDate timeIntervalSinceDate:[NSDate date]] <= 0 && timeLeft == 0) {
+    NSLog(@"omriku returns seems all 0 and already set..");
+    return;
+  }
   // DNDTimeLeft = timeLeft;
   DNDFireDate = [NSDate dateWithTimeIntervalSinceNow:([timeLeft intValue]*60)];
   NSMutableDictionary* settingsFile =  [[NSMutableDictionary alloc] init];

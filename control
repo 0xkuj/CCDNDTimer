@@ -3,7 +3,7 @@ Name: CCDNDTimer
 Depends: mobilesubstrate
 Version: 1.1
 Architecture: iphoneos-arm
-Description: An awesome Control Center module!
+Description: DND Toggle with timer included
 Maintainer: 0xkuj
 Author: 0xkuj
 Section: Control Center (Modules)
