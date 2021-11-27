@@ -7,9 +7,10 @@
 
 @implementation CCDNDTimer
 __strong static id _sharedObject;
-NSTimer *DNDTimer;
-NSNumber* DNDTimeLeft;
+//NSTimer *DNDTimer;
+//NSNumber* DNDTimeLeft;
 BOOL gotDeselected;
+NSDate* DNDFireDate;
 + (id)sharedInstance
 {
     if (!_sharedObject) {
@@ -23,7 +24,9 @@ BOOL gotDeselected;
 {
     return [UIImage imageNamed:@"Icon" inBundle:[NSBundle bundleForClass:[self class]] compatibleWithTraitCollection:nil];
 }
-
+-(BOOL)getGotDeselected {
+  return gotDeselected;
+}
 + (void)enableDND {
 	if (!assertionService) assertionService = (DNDModeAssertionService *)[%c(DNDModeAssertionService) serviceForClientIdentifier:@"com.apple.donotdisturb.control-center.module"];
 	DNDModeAssertionDetails *newAssertion = [%c(DNDModeAssertionDetails) userRequestedAssertionDetailsWithIdentifier:@"com.apple.control-center.manual-toggle" modeIdentifier:@"com.apple.donotdisturb.mode.default" lifetime:nil];
@@ -42,9 +45,9 @@ static BOOL isDNDEnabled(){
 	else return MSHookIvar<BOOL>(service, "_doNotDisturbActive");
 }
 
--(NSTimer*)getTimer {
-  return DNDTimer;
-}
+//-(NSTimer*)getTimer {
+//  return DNDTimer;
+//}
 
 //Return the color selection color of your module here
 - (UIColor *)selectedColor
@@ -55,9 +58,11 @@ static BOOL isDNDEnabled(){
 - (BOOL)isSelected
 {
   NSLog(@"omriku checking toggle state..");
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(cancelToggle) name:@"com.0xkuj.ccdndtimer.timerover" object:nil];
   NSMutableDictionary* timerLeftDict = [[NSMutableDictionary alloc] initWithContentsOfFile:DND_TIMER_PLIST];
-  DNDTimeLeft = [NSNumber numberWithInt:[[timerLeftDict objectForKey:@"DNDTimeLeft"] intValue]];
-  if ([DNDTimeLeft intValue] > 0 && isDNDEnabled() && !gotDeselected) {
+  NSDate* lastFireDate = [timerLeftDict objectForKey:@"DNDFireDate"];
+  long timeDelta = [lastFireDate timeIntervalSinceDate:[NSDate date]];
+  if (timeDelta > 0 && isDNDEnabled() && !gotDeselected) {
       return YES;
   }
   return _selected;
@@ -74,24 +79,27 @@ static BOOL isDNDEnabled(){
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"CCDNDTimer" message:[NSString stringWithFormat:@"Enter time below (minutes)"] preferredStyle:UIAlertControllerStyleAlert];
 		[alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) { textField.placeholder = @"Enter Minutes";	textField.keyboardType = UIKeyboardTypeNumberPad;}];
     UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"Enable DND" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+          //post notificvation..
           if ([[[alertController textFields][0] text] intValue] == 0) {
             [self setSelected:NO];
             return;
           }
           [self updateDNDTimerSettingsWithTimeLeft:[NSNumber numberWithInt:[[[alertController textFields][0] text] intValue]]];
-          NSLog(@"omriku starting DNDTimer with time of: %@ firedate: %@", DNDTimeLeft, [NSDate dateWithTimeIntervalSinceNow:([DNDTimeLeft intValue]*60)]);
-          [self resetTimer];
-          DNDTimer = [NSTimer scheduledTimerWithTimeInterval:1
-                                           target:self
-                                            selector:@selector(updateDNDTimer)
-                                            userInfo:nil
-                                            repeats:YES];
+          NSLog(@"omriku starting DNDTimer with time of firedate: %@", DNDFireDate);
+          //[self resetTimer];
+          //DNDTimer = [NSTimer scheduledTimerWithTimeInterval:60
+                                   //        target:self
+                                      //      selector:@selector(updateDNDTimer)
+                                         //   userInfo:nil
+                                           // repeats:YES];
          // NSLog(@"omriku timer from class? :%@ ", DNDTimer);
           //dispatch_after(dispatch_time(DISPATCH_TIME_NOW, [DNDTimeLeft intValue] * 60 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
               //NSLog(@"omriku DND will be disabled now");
              // disableDND();
           //});
           [self enableDND];
+          NSLog(@"omriku posting notifciation");
+          [[NSNotificationCenter defaultCenter] postNotificationName:@"com.0xkuj.ccdndtimer.moduleactivated" object:nil];
     }];
     
     [alertController addAction:confirmAction];
@@ -116,16 +124,27 @@ static BOOL isDNDEnabled(){
     gotDeselected = YES;
     disableDND();
     [self updateDNDTimerSettingsWithTimeLeft:[NSNumber numberWithInt:0]];
-    [self resetTimer];
+   //[self resetTimer];
   }
 }
 
+-(void)cancelToggle {
+  [self setSelected:NO];
+}
+
+/*
 -(void)updateDNDTimer {
-  [self updateDNDTimerSettingsWithTimeLeft:[NSNumber numberWithInt:[DNDTimeLeft intValue] - 1]];
-  NSLog(@"omriku class timer has been called.. seconds left.. %@",DNDTimeLeft);
-  if ([DNDTimeLeft intValue] <= 0) {
-      [self setSelected:NO];
+  long timeDelta = [DNDFireDate timeIntervalSinceDate:[NSDate date]];
+  NSLog(@"omriku class timer has been called.. seconds left.. until fire %ld",timeDelta);
+  if (timeDelta <= 0) {
+    [self setSelected:NO];
+    NSLog(@"omriku printing the class addr: %@",self);
   }
+  //[self updateDNDTimerSettingsWithTimeLeft:[NSNumber numberWithInt:[DNDTimeLeft intValue] - 1]];
+ // NSLog(@"omriku class timer has been called.. seconds left.. %@",DNDTimeLeft);
+ // if ([DNDTimeLeft intValue] <= 0) {
+    //  [self setSelected:NO];
+ // }
 
 }
 
@@ -134,12 +153,15 @@ static BOOL isDNDEnabled(){
   [DNDTimer invalidate];
   DNDTimer = nil;
 }
+*/
 
 -(void)updateDNDTimerSettingsWithTimeLeft:(NSNumber*)timeLeft {
   NSLog(@"omriku saving to settings + updating the global variable! with timeleft: %@", timeLeft);
-  DNDTimeLeft = timeLeft;
+  // DNDTimeLeft = timeLeft;
+  DNDFireDate = [NSDate dateWithTimeIntervalSinceNow:([timeLeft intValue]*60)];
   NSMutableDictionary* settingsFile =  [[NSMutableDictionary alloc] init];
-  [settingsFile setObject:DNDTimeLeft forKey:@"DNDTimeLeft"];
+  //[settingsFile setObject:DNDTimeLeft forKey:@"DNDTimeLeft"];
+  [settingsFile setObject:DNDFireDate forKey:@"DNDFireDate"];
   [settingsFile writeToFile:DND_TIMER_PLIST atomically:YES];
 }
 @end

@@ -32,6 +32,7 @@ static void disableDND(){
 }
 - (void)setSelected:(BOOL)selected;
 +(void)enableDND;
--(NSTimer*)getTimer;
+//-(NSTimer*)getTimer;
+-(BOOL)getGotDeselected;
 + (id)sharedInstance;
 @end
