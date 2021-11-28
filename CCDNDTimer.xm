@@ -41,6 +41,7 @@ static bool isDNDEnabled() {
 
 - (BOOL)isSelected
 {
+  //add observer only once, since adding more observers will flood you with the same notifications!
   static dispatch_once_t onceToken2;
   dispatch_once(&onceToken2, ^{
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(cancelToggle) name:@"com.0xkuj.ccdndtimer.timerover" object:nil];
@@ -65,7 +66,7 @@ static bool isDNDEnabled() {
     [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) { textField.placeholder = @"Enter Hours";	textField.keyboardType = UIKeyboardTypeNumberPad;}];
     [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) { textField.placeholder = @"Enter Minutes";	textField.keyboardType = UIKeyboardTypeNumberPad;}];
     UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"Enable DND" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-          //post notificvation..
+          
           if ([[[alertController textFields][1] text] intValue] == 0 && [[[alertController textFields][0] text] intValue] == 0) {
             [self setSelected:NO];
             return;
@@ -76,7 +77,7 @@ static bool isDNDEnabled() {
           NSNumber* hoursAndMinutes = [NSNumber numberWithInt:(minutes+hours*60)]; 
           [self updateDNDTimerSettingsWithTimeLeft:hoursAndMinutes];
           enableDND();
-
+          //post notificvation.. 
           [[NSNotificationCenter defaultCenter] postNotificationName:@"com.0xkuj.ccdndtimer.moduleactivated" object:nil];
     }];
     

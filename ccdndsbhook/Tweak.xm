@@ -39,6 +39,7 @@ static bool isDNDEnabled() {
       [sbDNDTimer invalidate];
       sbDNDTimer = nil;
       sbDNDTimeLeft = 0;
+      //posting notification to the module
       [[NSNotificationCenter defaultCenter] postNotificationName:@"com.0xkuj.ccdndtimer.timerover" object:nil];
       return;
   }
@@ -66,6 +67,7 @@ NSDate* dndFireDate;
   %orig(arg1,arg2);
   if ([arg2 isKindOfClass:[NSClassFromString(@"CCDNDTimer") class]]) {
       static dispatch_once_t onceToken;
+      //add observer only once, since adding more observers will flood you with the same notifications!
       dispatch_once(&onceToken, ^{
           [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(addDNDLabel) name:@"com.0xkuj.ccdndtimer.moduleactivated" object:nil];
       }); 
