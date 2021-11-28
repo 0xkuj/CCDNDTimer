@@ -41,7 +41,6 @@ static bool isDNDEnabled() {
 
 - (BOOL)isSelected
 {
-  NSLog(@"omriku checking toggle state..");
   static dispatch_once_t onceToken2;
   dispatch_once(&onceToken2, ^{
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(cancelToggle) name:@"com.0xkuj.ccdndtimer.timerover" object:nil];
@@ -76,9 +75,7 @@ static bool isDNDEnabled() {
 
           NSNumber* hoursAndMinutes = [NSNumber numberWithInt:(minutes+hours*60)]; 
           [self updateDNDTimerSettingsWithTimeLeft:hoursAndMinutes];
-          NSLog(@"omriku starting DNDTimer with time of firedate: %@", DNDFireDate);
           enableDND();
-          NSLog(@"omriku posting notifciation");
 
           [[NSNotificationCenter defaultCenter] postNotificationName:@"com.0xkuj.ccdndtimer.moduleactivated" object:nil];
     }];
@@ -99,19 +96,15 @@ static bool isDNDEnabled() {
     gotDeselected = YES;
     disableDND();
     [self updateDNDTimerSettingsWithTimeLeft:[NSNumber numberWithInt:0]];
-   //[self resetTimer];
   }
 }
 
 -(void)cancelToggle {
-  NSLog(@"omriku cancel toggle has been called!");
   [self setSelected:NO];
 }
 
 -(void)updateDNDTimerSettingsWithTimeLeft:(NSNumber*)timeLeft {
-  NSLog(@"omriku saving to settings + updating the global variable! with timeleft: %@ and DNDFireDate: %f", timeLeft, [DNDFireDate timeIntervalSinceDate:[NSDate date]]);
   if ([DNDFireDate timeIntervalSinceDate:[NSDate date]] <= 0 && timeLeft == 0) {
-    NSLog(@"omriku returns seems all 0 and already set..");
     return;
   }
   // DNDTimeLeft = timeLeft;
