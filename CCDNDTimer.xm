@@ -62,6 +62,8 @@ static bool isDNDEnabled() {
 
   if(_selected)
   {
+    //v.1
+    /*
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"CCDNDTimer" message:[NSString stringWithFormat:@"How long you want DND to be active?"] preferredStyle:UIAlertControllerStyleAlert];
     [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) { textField.placeholder = @"Enter Hours";	textField.keyboardType = UIKeyboardTypeNumberPad;}];
     [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) { textField.placeholder = @"Enter Minutes";	textField.keyboardType = UIKeyboardTypeNumberPad;}];
@@ -80,8 +82,37 @@ static bool isDNDEnabled() {
           //post notificvation.. 
           [[NSNotificationCenter defaultCenter] postNotificationName:@"com.0xkuj.ccdndtimer.moduleactivated" object:nil];
     }];
-    
-    [alertController addAction:confirmAction];
+    */
+    //reach this number, 270. 60 is fine by me and 100 is the height. fine as well. only 270 is important!
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"CCDNDTimer" message:[NSString stringWithFormat:@"How long you want DND to be active?\n\n\n\n\n\n"] preferredStyle:UIAlertControllerStyleAlert];
+    UIDatePicker *picker = [[UIDatePicker alloc] init];
+    picker.frame = CGRectMake(0, 60, 270, 100);
+    [picker setDatePickerMode:UIDatePickerModeCountDownTimer];
+    [alertController.view addSubview:picker];
+    [alertController addAction:({
+        UIAlertAction *action = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+            NSDateComponents *components = [[NSCalendar currentCalendar] components:(NSCalendarUnitHour | NSCalendarUnitMinute) fromDate:picker.date];
+            NSNumber* hoursAndMinutes = [NSNumber numberWithInt:([components minute]+[components hour]*60)]; 
+            if ([hoursAndMinutes intValue] < 0) {
+              [self setSelected:NO];
+              return;
+            } else if ([hoursAndMinutes intValue] == 0) {
+              hoursAndMinutes = [NSNumber numberWithInt:1];
+            }
+            [self updateDNDTimerSettingsWithTimeLeft:hoursAndMinutes];
+            enableDND();
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"com.0xkuj.ccdndtimer.moduleactivated" object:nil];
+        }];
+        action;
+    })];
+
+    /* prepare function for "no" button" */
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style: UIAlertActionStyleCancel handler:^(UIAlertAction * action) { 
+            [self setSelected:NO];
+            return;
+     }];
+    /* actually assign those actions to the buttons */
+    [alertController addAction:cancelAction];
     UIWindow* tempWindowForPrompt;
     tempWindowForPrompt = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     tempWindowForPrompt.rootViewController = [UIViewController new];
