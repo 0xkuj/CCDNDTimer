@@ -1,9 +1,11 @@
-#define DND_TIMER_PLIST @"/var/mobile/Library/Preferences/com.0xkuj.ccdndtimer.plist"
+
 #import <ControlCenterUIKit/CCUIToggleModule.h>
 #import <objc/objc.h>
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-function"
+#import <rootless.h>
 
+#define DND_TIMER_PLIST ROOT_PATH_NS(@"/var/mobile/Library/Preferences/com.0xkuj.ccdndtimer.plist")
 
 @class DNDModeAssertionLifetime;
 @interface DNDModeAssertionDetails : NSObject

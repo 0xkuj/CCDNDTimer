@@ -1,5 +1,6 @@
 #import <UIKit/UIKit.h>
 #include "CCDNDTimer.h"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 @interface UIWindow ()
 - (void)_setSecure:(BOOL)arg1;
@@ -28,8 +29,13 @@ static void disableDND() {
 
 static bool isDNDEnabled() {
 	id service = MSHookIvar<id>(UIApplication.sharedApplication, "_dndNotificationsService");
-	if(!service) return 0;
-	else return MSHookIvar<BOOL>(service, "_doNotDisturbActive");
+	if(!service) {
+		return 0;
+	}
+	else {
+		id state = MSHookIvar<id>(service, "_currentState");
+		return [state isActive];
+	}
 }
 
 //Return the color selection color of your module here
@@ -113,15 +119,10 @@ static bool isDNDEnabled() {
      }];
     /* actually assign those actions to the buttons */
     [alertController addAction:cancelAction];
-    UIWindow* tempWindowForPrompt;
-    tempWindowForPrompt = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-    tempWindowForPrompt.rootViewController = [UIViewController new];
-    tempWindowForPrompt.windowLevel = UIWindowLevelAlert+1;
-    tempWindowForPrompt.hidden = NO;
-    tempWindowForPrompt.tintColor = [[UIWindow valueForKey:@"keyWindow"] tintColor];
-    [tempWindowForPrompt _setSecure:YES];
-    [tempWindowForPrompt makeKeyAndVisible];
-    [tempWindowForPrompt.rootViewController presentViewController:alertController animated:YES completion:nil];
+		UIWindow *originalKeyWindow = [[UIApplication sharedApplication] keyWindow];
+		UIResponder *responder = originalKeyWindow.rootViewController.view;
+		while ([responder isKindOfClass:[UIView class]]) responder = [responder nextResponder];
+		[(UIViewController *)responder presentViewController:alertController animated:YES completion:^{}];
   }
   else
   {
