@@ -1,9 +1,10 @@
 Package: com.0xkuj.ccdndtimer
 Name: CCDNDTimer
 Depends: com.opa334.ccsupport
-Version: 1.3
-Architecture: iphoneos-arm
 Description: DND Toggle with timer included!
 Maintainer: 0xkuj
 Author: 0xkuj
 Section: Tweaks
+Architecture: iphoneos-arm
+Version: 1.3
+Installed-Size: 360

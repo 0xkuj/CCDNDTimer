@@ -1,5 +1,7 @@
 #import <UIKit/UIKit.h>
 #include "CCDNDTimer.h"
+//#import <rootless.h>
+//#define CCTOGGLE_ICON_PATH ROOT_PATH_NS(@"/var/jb/Library/ControlCenter/Bundles/CCDNDTimer.bundle/");
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 @interface UIWindow ()
@@ -10,9 +12,11 @@
 BOOL gotDeselected;
 NSDate* DNDFireDate;
 
-//Return the icon of your module here
-- (UIImage *)iconGlyph
-{
+- (CCUICAPackageDescription *)glyphPackageDescription {
+    return [CCUICAPackageDescription descriptionForPackageNamed:@"CCDNDTimer" inBundle:[NSBundle bundleForClass:[self class]]];
+}
+
+- (UIImage *)iconGlyph {
     return [UIImage imageNamed:@"Icon" inBundle:[NSBundle bundleForClass:[self class]] compatibleWithTraitCollection:nil];
 }
 
@@ -92,9 +96,18 @@ static bool isDNDEnabled() {
     //reach this number, 270. 60 is fine by me and 100 is the height. fine as well. only 270 is important!
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"CCDNDTimer" message:[NSString stringWithFormat:@"How long you want DND to be active?\n\n\n\n\n\n"] preferredStyle:UIAlertControllerStyleAlert];
     UIDatePicker *picker = [[UIDatePicker alloc] init];
-    picker.frame = CGRectMake(0, 60, 270, 100);
+    //picker.frame = CGRectMake(0, 60, 270, 100);
     [picker setDatePickerMode:UIDatePickerModeCountDownTimer];
     [alertController.view addSubview:picker];
+    picker.translatesAutoresizingMaskIntoConstraints = NO;
+    // added constraints because ios 16..
+    [NSLayoutConstraint activateConstraints:@[
+        [picker.leadingAnchor constraintEqualToAnchor:alertController.view.leadingAnchor],
+        [picker.trailingAnchor constraintEqualToAnchor:alertController.view.trailingAnchor],
+        [picker.topAnchor constraintEqualToAnchor:alertController.view.topAnchor constant:60],
+        [picker.heightAnchor constraintEqualToConstant:120]
+    ]];
+
     [alertController addAction:({
         UIAlertAction *action = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
             NSDateComponents *components = [[NSCalendar currentCalendar] components:(NSCalendarUnitHour | NSCalendarUnitMinute) fromDate:picker.date];
